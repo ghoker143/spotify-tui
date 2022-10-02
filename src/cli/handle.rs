@@ -28,7 +28,7 @@ pub async fn handle_matches(
     Some(p) => p
       .devices
       .iter()
-      .map(|d| d.id.clone())
+      .map(|d| d.id.clone().unwrap().to_string())
       .collect::<Vec<String>>(),
     None => Vec::new(),
   };

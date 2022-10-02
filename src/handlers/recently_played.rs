@@ -1,3 +1,5 @@
+use rspotify::prelude::Id;
+
 use super::{super::app::App, common_key_events};
 use crate::{app::RecommendationsContext, event::Key, network::IoEvent};
 
@@ -54,7 +56,7 @@ pub fn handler(key: Key, app: &mut App) {
         let track_uris: Vec<String> = recently_played_result
           .items
           .iter()
-          .map(|item| item.track.uri.to_owned())
+          .map(|item| item.track.id.clone().unwrap().uri().to_string())
           .collect();
 
         app.dispatch(IoEvent::StartPlayback(
@@ -81,7 +83,7 @@ pub fn handler(key: Key, app: &mut App) {
     _ if key == app.user_config.keys.add_item_to_queue => {
       if let Some(recently_played_result) = &app.recently_played.result.clone() {
         if let Some(history) = recently_played_result.items.get(app.recently_played.index) {
-          app.dispatch(IoEvent::AddItemToQueue(history.track.uri.clone()))
+          app.dispatch(IoEvent::AddItemToQueue(history.track.id.clone().unwrap().uri().to_string()))
         }
       };
     }

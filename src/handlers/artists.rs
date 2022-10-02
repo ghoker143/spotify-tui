@@ -1,3 +1,5 @@
+use rspotify::prelude::Id;
+
 use super::common_key_events;
 use crate::{
   app::{ActiveBlock, App, RecommendationsContext, RouteId},
@@ -54,7 +56,7 @@ pub fn handler(key: Key, app: &mut App) {
       let artist = artists.get(app.artists_list_index);
       if let Some(artist) = artist {
         app.dispatch(IoEvent::StartPlayback(
-          Some(artist.uri()),
+          Some(artist.id.uri()),
           None,
           None,
         ));

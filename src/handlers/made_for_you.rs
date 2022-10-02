@@ -51,7 +51,7 @@ pub fn handler(key: Key, app: &mut App) {
           app.made_for_you_offset = 0;
           let playlist_id = selected_playlist.id.to_owned();
           app.dispatch(IoEvent::GetMadeForYouPlaylistTracks(
-            playlist_id,
+            playlist_id.to_string(),
             app.made_for_you_offset,
           ));
         }

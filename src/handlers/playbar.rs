@@ -19,11 +19,11 @@ pub fn handler(key: Key, app: &mut App) {
         match item {
           PlayableItem::Track(track) => {
             if let Some(track_id) = track.id {
-              app.dispatch(IoEvent::ToggleSaveTrack(track_id));
+              app.dispatch(IoEvent::ToggleSaveTrack(track_id.to_string()));
             }
           }
           PlayableItem::Episode(episode) => {
-            app.dispatch(IoEvent::ToggleSaveTrack(episode.id));
+            app.dispatch(IoEvent::ToggleSaveTrack(episode.id.to_string()));
           }
         };
       };

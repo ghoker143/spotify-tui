@@ -1,3 +1,5 @@
+use rspotify::prelude::Id;
+
 use super::{
   super::app::{App, EpisodeTableContext},
   common_key_events,
@@ -69,7 +71,7 @@ fn on_enter(app: &mut App) {
     let episode_uris = episodes
       .items
       .iter()
-      .map(|episode| episode.uri.to_owned())
+      .map(|episode| episode.id.uri().to_owned())
       .collect::<Vec<String>>();
     app.dispatch(IoEvent::StartPlayback(
       None,
@@ -88,13 +90,13 @@ fn handle_next_event(app: &mut App) {
     EpisodeTableContext::Full => {
       if let Some(selected_episode) = app.selected_show_full.clone() {
         let show_id = selected_episode.show.id;
-        app.get_episode_table_next(show_id)
+        app.get_episode_table_next(show_id.to_string())
       }
     }
     EpisodeTableContext::Simplified => {
       if let Some(selected_episode) = app.selected_show_simplified.clone() {
         let show_id = selected_episode.show.id;
-        app.get_episode_table_next(show_id)
+        app.get_episode_table_next(show_id.to_string())
       }
     }
   }

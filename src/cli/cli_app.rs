@@ -5,7 +5,6 @@ use super::util::{Flag, Format, FormatType, JumpDirection, Type};
 
 use anyhow::{anyhow, Result};
 use rand::{thread_rng, Rng};
-use rspotify::model::Country;
 use rspotify::model::{context::CurrentPlaybackContext, PlayableItem};
 use rspotify::prelude::Id;
 
@@ -523,7 +522,8 @@ impl<'a> CliApp<'a> {
         Type::Album => {
           if let Some(r) = &results.albums {
             let album = &r.items[0];
-            if let Some(uri) = &album.uri {
+            
+            if let Some(uri) = &album.id.unwrap().uri().to_string() {
               uri.clone()
             } else {
               return Err(anyhow!("album {} has no uri", album.name));

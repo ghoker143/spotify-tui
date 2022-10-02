@@ -16,9 +16,8 @@ use rspotify::{
     user::PrivateUser,
     PlayableItem
   },
-  model::enums::country::Country,
+  model::enums::country::Country, prelude::Id,
 };
-use std::str::FromStr;
 use std::sync::mpsc::Sender;
 use std::{
   cmp::{max, min},
@@ -562,7 +561,7 @@ impl App {
       seed_artists,
       seed_tracks,
       Box::new(first_track),
-      Some(user_country),
+      user_country,
     ));
   }
 
@@ -769,7 +768,7 @@ impl App {
       None => {
         if let Some(saved_artists) = &self.library.saved_artists.clone().get_results(None) {
           if let Some(last_artist) = saved_artists.items.last() {
-            self.dispatch(IoEvent::GetFollowedArtists(Some(last_artist.id.tostring().clone())));
+            self.dispatch(IoEvent::GetFollowedArtists(Some(last_artist.id.id().to_string().clone())));
           }
         }
       }
@@ -853,7 +852,7 @@ impl App {
           if let Some(selected_index) = self.search_results.selected_album_index {
             let selected_album = &albums.items[selected_index];
             if let Some(album_id) = selected_album.id.clone() {
-              self.dispatch(IoEvent::CurrentUserSavedAlbumDelete(album_id));
+              self.dispatch(IoEvent::CurrentUserSavedAlbumDelete(album_id.id().to_string()));
             }
           }
         }
@@ -862,7 +861,7 @@ impl App {
         if let Some(albums) = self.library.saved_albums.get_results(None) {
           if let Some(selected_album) = albums.items.get(self.album_list_index) {
             let album_id = selected_album.album.id.clone();
-            self.dispatch(IoEvent::CurrentUserSavedAlbumDelete(album_id));
+            self.dispatch(IoEvent::CurrentUserSavedAlbumDelete(album_id.id().to_string()));
           }
         }
       }
@@ -870,7 +869,7 @@ impl App {
         if let Some(artist) = &self.artist {
           if let Some(selected_album) = artist.albums.items.get(artist.selected_album_index) {
             if let Some(album_id) = selected_album.id.clone() {
-              self.dispatch(IoEvent::CurrentUserSavedAlbumDelete(album_id));
+              self.dispatch(IoEvent::CurrentUserSavedAlbumDelete(album_id.id().to_string()));
             }
           }
         }
@@ -886,7 +885,7 @@ impl App {
           if let Some(selected_index) = self.search_results.selected_album_index {
             let selected_album = &albums.items[selected_index];
             if let Some(album_id) = selected_album.id.clone() {
-              self.dispatch(IoEvent::CurrentUserSavedAlbumAdd(album_id));
+              self.dispatch(IoEvent::CurrentUserSavedAlbumAdd(album_id.id().to_string()));
             }
           }
         }
@@ -895,7 +894,7 @@ impl App {
         if let Some(artist) = &self.artist {
           if let Some(selected_album) = artist.albums.items.get(artist.selected_album_index) {
             if let Some(album_id) = selected_album.id.clone() {
-              self.dispatch(IoEvent::CurrentUserSavedAlbumAdd(album_id));
+              self.dispatch(IoEvent::CurrentUserSavedAlbumAdd(album_id.id().to_string()));
             }
           }
         }
@@ -957,7 +956,7 @@ impl App {
           if let Some(selected_index) = self.search_results.selected_artists_index {
             let selected_artist: &FullArtist = &artists.items[selected_index];
             let artist_id = selected_artist.id.clone();
-            self.dispatch(IoEvent::UserUnfollowArtists(vec![artist_id]));
+            self.dispatch(IoEvent::UserUnfollowArtists(vec![artist_id.id().to_string()]));
           }
         }
       }
@@ -965,7 +964,7 @@ impl App {
         if let Some(artists) = self.library.saved_artists.get_results(None) {
           if let Some(selected_artist) = artists.items.get(self.artists_list_index) {
             let artist_id = selected_artist.id.clone();
-            self.dispatch(IoEvent::UserUnfollowArtists(vec![artist_id]));
+            self.dispatch(IoEvent::UserUnfollowArtists(vec![artist_id.id().to_string()]));
           }
         }
       }
@@ -973,7 +972,7 @@ impl App {
         if let Some(artist) = &self.artist {
           let selected_artis = &artist.related_artists[artist.selected_related_artist_index];
           let artist_id = selected_artis.id.clone();
-          self.dispatch(IoEvent::UserUnfollowArtists(vec![artist_id]));
+          self.dispatch(IoEvent::UserUnfollowArtists(vec![artist_id.id().to_string()]));
         }
       }
       _ => (),
@@ -987,7 +986,7 @@ impl App {
           if let Some(selected_index) = self.search_results.selected_artists_index {
             let selected_artist: &FullArtist = &artists.items[selected_index];
             let artist_id = selected_artist.id.clone();
-            self.dispatch(IoEvent::UserFollowArtists(vec![artist_id]));
+            self.dispatch(IoEvent::UserFollowArtists(vec![artist_id.id().to_string()]));
           }
         }
       }
@@ -995,7 +994,7 @@ impl App {
         if let Some(artist) = &self.artist {
           let selected_artis = &artist.related_artists[artist.selected_related_artist_index];
           let artist_id = selected_artis.id.clone();
-          self.dispatch(IoEvent::UserFollowArtists(vec![artist_id]));
+          self.dispatch(IoEvent::UserFollowArtists(vec![artist_id.id().to_string()]));
         }
       }
       _ => (),
@@ -1014,8 +1013,8 @@ impl App {
       let selected_public = selected_playlist.public;
       let selected_owner_id = selected_playlist.owner.id.clone();
       self.dispatch(IoEvent::UserFollowPlaylist(
-        selected_owner_id,
-        selected_id,
+        selected_owner_id.id().to_string(),
+        selected_id.id().to_string(),
         selected_public,
       ));
     }
@@ -1028,7 +1027,7 @@ impl App {
       let selected_playlist = &playlists.items[selected_index];
       let selected_id = selected_playlist.id.clone();
       let user_id = user.id.clone();
-      self.dispatch(IoEvent::UserUnfollowPlaylist(user_id, selected_id))
+      self.dispatch(IoEvent::UserUnfollowPlaylist(user_id.id().to_string(), selected_id.id().to_string()))
     }
   }
 
@@ -1041,7 +1040,7 @@ impl App {
       let selected_playlist = &playlists.items[selected_index];
       let selected_id = selected_playlist.id.clone();
       let user_id = user.id.clone();
-      self.dispatch(IoEvent::UserUnfollowPlaylist(user_id, selected_id))
+      self.dispatch(IoEvent::UserUnfollowPlaylist(user_id.id().to_string(), selected_id.id().to_string()))
     }
   }
 
@@ -1051,7 +1050,7 @@ impl App {
         if let Some(shows) = &self.search_results.shows {
           if let Some(selected_index) = self.search_results.selected_shows_index {
             if let Some(show_id) = shows.items.get(selected_index).map(|item| item.id.clone()) {
-              self.dispatch(IoEvent::CurrentUserSavedShowAdd(show_id));
+              self.dispatch(IoEvent::CurrentUserSavedShowAdd(show_id.id().to_string()));
             }
           }
         }
@@ -1060,13 +1059,13 @@ impl App {
         EpisodeTableContext::Full => {
           if let Some(selected_episode) = self.selected_show_full.clone() {
             let show_id = selected_episode.show.id;
-            self.dispatch(IoEvent::CurrentUserSavedShowAdd(show_id));
+            self.dispatch(IoEvent::CurrentUserSavedShowAdd(show_id.id().to_string()));
           }
         }
         EpisodeTableContext::Simplified => {
           if let Some(selected_episode) = self.selected_show_simplified.clone() {
             let show_id = selected_episode.show.id;
-            self.dispatch(IoEvent::CurrentUserSavedShowAdd(show_id));
+            self.dispatch(IoEvent::CurrentUserSavedShowAdd(show_id.id().to_string()));
           }
         }
       },
@@ -1080,7 +1079,7 @@ impl App {
         if let Some(shows) = self.library.saved_shows.get_results(None) {
           if let Some(selected_show) = shows.items.get(self.shows_list_index) {
             let show_id = selected_show.show.id.clone();
-            self.dispatch(IoEvent::CurrentUserSavedShowDelete(show_id));
+            self.dispatch(IoEvent::CurrentUserSavedShowDelete(show_id.id().to_string()));
           }
         }
       }
@@ -1088,7 +1087,7 @@ impl App {
         if let Some(shows) = &self.search_results.shows {
           if let Some(selected_index) = self.search_results.selected_shows_index {
             let show_id = shows.items[selected_index].id.to_owned();
-            self.dispatch(IoEvent::CurrentUserSavedShowDelete(show_id));
+            self.dispatch(IoEvent::CurrentUserSavedShowDelete(show_id.id().to_string()));
           }
         }
       }
@@ -1096,13 +1095,13 @@ impl App {
         EpisodeTableContext::Full => {
           if let Some(selected_episode) = self.selected_show_full.clone() {
             let show_id = selected_episode.show.id;
-            self.dispatch(IoEvent::CurrentUserSavedShowDelete(show_id));
+            self.dispatch(IoEvent::CurrentUserSavedShowDelete(show_id.id().to_string()));
           }
         }
         EpisodeTableContext::Simplified => {
           if let Some(selected_episode) = self.selected_show_simplified.clone() {
             let show_id = selected_episode.show.id;
-            self.dispatch(IoEvent::CurrentUserSavedShowDelete(show_id));
+            self.dispatch(IoEvent::CurrentUserSavedShowDelete(show_id.id().to_string()));
           }
         }
       },
@@ -1145,7 +1144,7 @@ impl App {
       match item {
         PlayableItem::Track(track) => {
           if self.get_current_route().id != RouteId::Analysis {
-            let uri = track.uri.clone();
+            let uri = track.id.unwrap().uri().clone();
             self.dispatch(IoEvent::GetAudioAnalysis(uri));
             self.push_navigation_stack(RouteId::Analysis, ActiveBlock::Analysis);
           }
@@ -1178,7 +1177,7 @@ impl App {
     self
       .user
       .to_owned()
-      .and_then(|user| Country::from_str(&user.country.unwrap_or_else(|| "".to_string())).ok())
+      .and_then(|user| user.country)
   }
 
   pub fn calculate_help_menu_offset(&mut self) {

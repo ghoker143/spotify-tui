@@ -1,3 +1,5 @@
+use rspotify::prelude::Id;
+
 use super::common_key_events;
 use crate::app::{ActiveBlock, App, ArtistBlock, RecommendationsContext, TrackTableContext};
 use crate::event::Key;
@@ -172,7 +174,7 @@ fn handle_recommend_event_on_selected_block(app: &mut App) {
         let selected_index = artist.selected_related_artist_index;
         let artist_id = &artist.related_artists[selected_index].id;
         let artist_name = &artist.related_artists[selected_index].name;
-        let artist_id_list: Option<Vec<String>> = Some(vec![artist_id.clone()]);
+        let artist_id_list: Option<Vec<String>> = Some(vec![artist_id.clone().to_string()]);
 
         app.recommendations_context = Some(RecommendationsContext::Artist);
         app.recommendations_seed = artist_name.clone();
@@ -191,7 +193,7 @@ fn handle_enter_event_on_selected_block(app: &mut App) {
         let top_tracks = artist
           .top_tracks
           .iter()
-          .map(|track| track.uri.to_owned())
+          .map(|track| track.id.unwrap().uri().to_owned())
           .collect();
         app.dispatch(IoEvent::StartPlayback(
           None,
@@ -214,7 +216,7 @@ fn handle_enter_event_on_selected_block(app: &mut App) {
         let selected_index = artist.selected_related_artist_index;
         let artist_id = artist.related_artists[selected_index].id.clone();
         let artist_name = artist.related_artists[selected_index].name.clone();
-        app.get_artist(artist_id, artist_name);
+        app.get_artist(artist_id.to_string(), artist_name);
       }
       ArtistBlock::Empty => {}
     }
@@ -309,7 +311,7 @@ pub fn handler(key: Key, app: &mut App) {
       _ if key == app.user_config.keys.add_item_to_queue => {
         if let ArtistBlock::TopTracks = artist.artist_selected_block {
           if let Some(track) = artist.top_tracks.get(artist.selected_top_track_index) {
-            let uri = track.uri.clone();
+            let uri = track.id.unwrap().uri().clone();
             app.dispatch(IoEvent::AddItemToQueue(uri));
           };
         }

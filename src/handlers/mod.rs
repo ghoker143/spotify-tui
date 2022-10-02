@@ -236,7 +236,7 @@ fn handle_jump_to_artist_album(app: &mut App) {
       PlayableItem::Track(track) => {
         if let Some(artist) = track.artists.first() {
           if let Some(artist_id) = artist.id.clone() {
-            app.get_artist(artist_id, artist.name.clone());
+            app.get_artist(artist_id.to_string(), artist.name.clone());
             app.push_navigation_stack(RouteId::Artist, ActiveBlock::ArtistBlock);
           }
         }
