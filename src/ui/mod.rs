@@ -10,8 +10,8 @@ use super::{
 };
 use help::get_help_docs;
 use rspotify::model::show::ResumePoint;
-use rspotify::model::PlayingItem;
-use rspotify::senum::RepeatState;
+use rspotify::model::PlayableItem;
+use rspotify::model::enums::RepeatState;
 use tui::{
   backend::Backend,
   layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -388,11 +388,11 @@ where
       .clone()
       .and_then(|context| {
         context.item.and_then(|item| match item {
-          PlayingItem::Track(track) => track.id,
-          PlayingItem::Episode(episode) => Some(episode.id),
+          PlayableItem::Track(track) => track.id,
+          PlayableItem::Episode(episode) => Some(episode.id),
         })
       })
-      .unwrap_or_else(|| "".to_string());
+      .unwrap_or_else(||"".to_string());
 
     let songs = match &app.search_results.tracks {
       Some(tracks) => tracks
@@ -698,7 +698,7 @@ where
                 item.track_number.to_string(),
                 item.name.to_owned(),
                 create_artist_string(&item.artists),
-                millis_to_minutes(u128::from(item.duration_ms)),
+                millis_to_minutes(u128::from(item.duration.as_millis())),
               ],
             })
             .collect::<Vec<TableItem>>(),
@@ -724,7 +724,7 @@ where
               item.track_number.to_string(),
               item.name.to_owned(),
               create_artist_string(&item.artists),
-              millis_to_minutes(u128::from(item.duration_ms)),
+              millis_to_minutes(u128::from(item.duration.as_millis())),
             ],
           })
           .collect::<Vec<TableItem>>(),
@@ -804,7 +804,7 @@ where
         item.name.to_owned(),
         create_artist_string(&item.artists),
         item.album.name.to_owned(),
-        millis_to_minutes(u128::from(item.duration_ms)),
+        millis_to_minutes(u128::from(item.duration.as_millis())),
       ],
     })
     .collect::<Vec<TableItem>>();
@@ -883,7 +883,7 @@ where
         item.name.to_owned(),
         create_artist_string(&item.artists),
         item.album.name.to_owned(),
-        millis_to_minutes(u128::from(item.duration_ms)),
+        millis_to_minutes(u128::from(item.duration.as_millis())),
       ],
     })
     .collect::<Vec<TableItem>>();
@@ -967,7 +967,7 @@ where
         current_playback_context.device.name,
         shuffle_text,
         repeat_text,
-        current_playback_context.device.volume_percent
+        current_playback_context.device.volume_percent.unwrap()
       );
 
       let current_route = app.get_current_route();
@@ -987,15 +987,15 @@ where
       f.render_widget(title_block, layout_chunk);
 
       let (item_id, name, duration_ms) = match track_item {
-        PlayingItem::Track(track) => (
+        PlayableItem::Track(track) => (
           track.id.to_owned().unwrap_or_else(|| "".to_string()),
           track.name.to_owned(),
-          track.duration_ms,
+          track.duration.as_millis(),
         ),
-        PlayingItem::Episode(episode) => (
+        PlayableItem::Episode(episode) => (
           episode.id.to_owned(),
           episode.name.to_owned(),
-          episode.duration_ms,
+          episode.duration.as_millis(),
         ),
       };
 
@@ -1006,8 +1006,8 @@ where
       };
 
       let play_bar_text = match track_item {
-        PlayingItem::Track(track) => create_artist_string(&track.artists),
-        PlayingItem::Episode(episode) => format!("{} - {}", episode.name, episode.show.name),
+        PlayableItem::Track(track) => create_artist_string(&track.artists),
+        PlayableItem::Episode(episode) => format!("{} - {}", episode.name, episode.show.name),
       };
 
       let lines = Text::from(Span::styled(
@@ -1203,8 +1203,8 @@ where
         let mut name = String::new();
         if let Some(context) = &app.current_playback_context {
           let track_id = match &context.item {
-            Some(PlayingItem::Track(track)) => track.id.to_owned(),
-            Some(PlayingItem::Episode(episode)) => Some(episode.id.to_owned()),
+            Some(PlayableItem::Track(track)) => track.id.to_owned(),
+            Some(PlayableItem::Episode(episode)) => Some(episode.id.to_owned()),
             _ => None,
           };
 
@@ -1461,7 +1461,7 @@ where
         let (played_str, time_str) = match episode.resume_point {
           Some(ResumePoint {
             fully_played,
-            resume_position_ms,
+            resume_position,
           }) => (
             if fully_played {
               " ✔".to_owned()
@@ -1470,13 +1470,13 @@ where
             },
             format!(
               "{} / {}",
-              millis_to_minutes(u128::from(resume_position_ms)),
-              millis_to_minutes(u128::from(episode.duration_ms))
+              millis_to_minutes(u128::from(resume_position.as_millis())),
+              millis_to_minutes(u128::from(episode.duration.as_millis()))
             ),
           ),
           None => (
             "".to_owned(),
-            millis_to_minutes(u128::from(episode.duration_ms)),
+            millis_to_minutes(u128::from(episode.duration.as_millis())),
           ),
         };
         TableItem {
@@ -1617,7 +1617,7 @@ where
           "".to_string(),
           item.track.name.to_owned(),
           create_artist_string(&item.track.artists),
-          millis_to_minutes(u128::from(item.track.duration_ms)),
+          millis_to_minutes(u128::from(item.track.duration.as_millis())),
         ],
       })
       .collect::<Vec<TableItem>>();
@@ -1765,10 +1765,10 @@ fn draw_table<B>(
 
   let track_playing_index = app.current_playback_context.to_owned().and_then(|ctx| {
     ctx.item.and_then(|item| match item {
-      PlayingItem::Track(track) => items
+      PlayableItem::Track(track) => items
         .iter()
         .position(|item| track.id.to_owned().map(|id| id == item.id).unwrap_or(false)),
-      PlayingItem::Episode(episode) => items.iter().position(|item| episode.id == item.id),
+      PlayableItem::Episode(episode) => items.iter().position(|item| episode.id == item.id),
     })
   });
 

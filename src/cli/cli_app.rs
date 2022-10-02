@@ -292,11 +292,11 @@ impl<'a> CliApp<'a> {
       }) = &app.current_playback_context
       {
         let duration = match item {
-          PlayableItem::Track(track) => track.duration,
-          PlayableItem::Episode(episode) => episode.duration,
+          PlayableItem::Track(track) => track.duration.as_millis(),
+          PlayableItem::Episode(episode) => episode.duration.as_millis(),
         };
 
-        (*ms as u32, duration)
+        (ms.as_millis() as u32, duration)
       } else {
         return Err(anyhow!("no context available"));
       }
@@ -322,7 +322,7 @@ impl<'a> CliApp<'a> {
     };
 
     // Check if position_to_seek is greater than duration (next track)
-    if position_to_seek > duration {
+    if position_to_seek > duration as u32 {
       self.jump(&JumpDirection::Next).await;
     } else {
       // This seeks to a position in the current song
@@ -414,10 +414,10 @@ impl<'a> CliApp<'a> {
 
     let mut hs = match playing_item {
       PlayableItem::Track(track) => {
-        let id = track.id.clone().unwrap_or_default();
+        let id = track.id.clone().unwrap();
         let mut hs = Format::from_type(FormatType::Track(Box::new(track.clone())));
-        if let Some(ms) = context.progress_ms {
-          hs.push(Format::Position((ms, track.duration_ms)))
+        if let Some(ms) = context.progress {
+          hs.push(Format::Position((ms.as_millis() as u32, track.duration.as_millis() as u32)))
         }
         hs.push(Format::Flags((
           context.repeat_state,
@@ -428,8 +428,8 @@ impl<'a> CliApp<'a> {
       }
       PlayableItem::Episode(episode) => {
         let mut hs = Format::from_type(FormatType::Episode(Box::new(episode.clone())));
-        if let Some(ms) = context.progress_ms {
-          hs.push(Format::Position((ms, episode.duration_ms)))
+        if let Some(ms) = context.progress {
+          hs.push(Format::Position((ms.as_millis() as u32, episode.duration.as_millis() as u32)))
         }
         hs.push(Format::Flags((
           context.repeat_state,
@@ -441,7 +441,7 @@ impl<'a> CliApp<'a> {
     };
 
     hs.push(Format::Device(context.device.name));
-    hs.push(Format::Volume(context.device.volume_percent));
+    hs.push(Format::Volume(context.device.volume_percent.unwrap()));
     hs.push(Format::Playing(context.is_playing));
 
     Ok(self.format_output(format, hs))

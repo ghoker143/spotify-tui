@@ -30,7 +30,7 @@ use crossterm::{
 use network::{get_spotify, IoEvent, Network};
 use redirect_uri::redirect_uri_web_server;
 use rspotify::{
-  oauth2::{SpotifyOAuth, TokenInfo},
+  OAuthClient::{SpotifyOAuth, TokenInfo},
   util::{process_token, request_token},
 };
 use std::{

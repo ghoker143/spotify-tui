@@ -14,9 +14,9 @@ use rspotify::{
     show::{FullShow, Show, SimplifiedEpisode, SimplifiedShow},
     track::{FullTrack, SavedTrack, SimplifiedTrack},
     user::PrivateUser,
-    PlaylistItem,
+    PlayableItem
   },
-  senum::Country,
+  model::enums::country::Country,
 };
 use std::str::FromStr;
 use std::sync::mpsc::Sender;
@@ -448,11 +448,11 @@ impl App {
     }) = &self.current_playback_context
     {
       let duration_ms = match item {
-        PlaylistItem::Track(track) => track.duration_ms,
-        PlaylistItem::Episode(episode) => episode.duration_ms,
+        PlayableItem::Track(track) => track.duration.as_millis(),
+        PlayableItem::Episode(episode) => episode.duration.as_millis(),
       };
 
-      let event = if seek_ms < duration_ms {
+      let event = if seek_ms < duration_ms as u32 {
         IoEvent::Seek(seek_ms)
       } else {
         IoEvent::NextTrack
@@ -485,7 +485,7 @@ impl App {
     self.poll_current_playback();
     if let Some(CurrentPlaybackContext {
       item: Some(item),
-      progress_ms: Some(progress_ms),
+      progress: Some(progress_ms),
       is_playing,
       ..
     }) = &self.current_playback_context
@@ -499,11 +499,11 @@ impl App {
           .as_millis()
       } else {
         0u128
-      } + u128::from(*progress_ms);
+      } + progress_ms.as_millis();
 
       let duration_ms = match item {
-        PlaylistItem::Track(track) => track.duration_ms,
-        PlaylistItem::Episode(episode) => episode.duration_ms,
+        PlayableItem::Track(track) => track.duration.as_millis(),
+        PlayableItem::Episode(episode) => episode.duration.as_millis(),
       };
 
       if elapsed < u128::from(duration_ms) {
@@ -520,8 +520,8 @@ impl App {
     }) = &self.current_playback_context
     {
       let duration_ms = match item {
-        PlaylistItem::Track(track) => track.duration_ms,
-        PlaylistItem::Episode(episode) => episode.duration_ms,
+        PlayableItem::Track(track) => track.duration.as_millis(),
+        PlayableItem::Episode(episode) => episode.duration.as_millis(),
       };
 
       let old_progress = match self.seek_ms {
@@ -531,7 +531,7 @@ impl App {
 
       let new_progress = min(
         old_progress as u32 + self.user_config.behavior.seek_milliseconds,
-        duration_ms,
+        duration_ms as u32,
       );
 
       self.seek_ms = Some(new_progress as u128);
@@ -573,7 +573,7 @@ impl App {
 
   pub fn increase_volume(&mut self) {
     if let Some(context) = self.current_playback_context.clone() {
-      let current_volume = context.device.volume_percent as u8;
+      let current_volume = context.device.volume_percent.unwrap() as u8;
       let next_volume = min(
         current_volume + self.user_config.behavior.volume_increment,
         100,
@@ -587,7 +587,7 @@ impl App {
 
   pub fn decrease_volume(&mut self) {
     if let Some(context) = self.current_playback_context.clone() {
-      let current_volume = context.device.volume_percent as i8;
+      let current_volume = context.device.volume_percent.unwrap() as i8;
       let next_volume = max(
         current_volume - self.user_config.behavior.volume_increment as i8,
         0,
@@ -683,15 +683,15 @@ impl App {
     }) = &self.current_playback_context
     {
       match item {
-        PlaylistItem::Track(track) => {
+        PlayableItem::Track(track) => {
           if let Err(e) = clipboard.set_text(format!(
             "https://open.spotify.com/track/{}",
-            track.id.to_owned().unwrap_or_default()
+            track.id.to_owned().unwrap()
           )) {
             self.handle_error(anyhow!("failed to set clipboard content: {}", e));
           }
         }
-        PlaylistItem::Episode(episode) => {
+        PlayableItem::Episode(episode) => {
           if let Err(e) = clipboard.set_text(format!(
             "https://open.spotify.com/episode/{}",
             episode.id.to_owned()
@@ -714,15 +714,15 @@ impl App {
     }) = &self.current_playback_context
     {
       match item {
-        PlaylistItem::Track(track) => {
+        PlayableItem::Track(track) => {
           if let Err(e) = clipboard.set_text(format!(
             "https://open.spotify.com/album/{}",
-            track.album.id.to_owned().unwrap_or_default()
+            track.album.id.to_owned().unwrap()
           )) {
             self.handle_error(anyhow!("failed to set clipboard content: {}", e));
           }
         }
-        PlaylistItem::Episode(episode) => {
+        PlayableItem::Episode(episode) => {
           if let Err(e) = clipboard.set_text(format!(
             "https://open.spotify.com/show/{}",
             episode.show.id.to_owned()
@@ -769,7 +769,7 @@ impl App {
       None => {
         if let Some(saved_artists) = &self.library.saved_artists.clone().get_results(None) {
           if let Some(last_artist) = saved_artists.items.last() {
-            self.dispatch(IoEvent::GetFollowedArtists(Some(last_artist.id.clone())));
+            self.dispatch(IoEvent::GetFollowedArtists(Some(last_artist.id.tostring().clone())));
           }
         }
       }
@@ -1143,14 +1143,14 @@ impl App {
     }) = &self.current_playback_context
     {
       match item {
-        PlaylistItem::Track(track) => {
+        PlayableItem::Track(track) => {
           if self.get_current_route().id != RouteId::Analysis {
             let uri = track.uri.clone();
             self.dispatch(IoEvent::GetAudioAnalysis(uri));
             self.push_navigation_stack(RouteId::Analysis, ActiveBlock::Analysis);
           }
         }
-        PlaylistItem::Episode(_episode) => {
+        PlayableItem::Episode(_episode) => {
           // No audio analysis available for podcast uris, so just default to the empty analysis
           // view to avoid a 400 error code
           self.push_navigation_stack(RouteId::Analysis, ActiveBlock::Analysis);
@@ -1170,7 +1170,7 @@ impl App {
     self.dispatch(IoEvent::GetArtist(
       artist_id,
       input_artist_name,
-      user_country,
+      Some(user_country),
     ));
   }
 

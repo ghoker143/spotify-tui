@@ -164,7 +164,7 @@ fn play_random_song(app: &mut App) {
             {
               (
                 Some(selected_playlist.uri.to_owned()),
-                selected_playlist.tracks.get("total"),
+                selected_playlist.tracks.total,
               )
             } else {
               (None, None)
@@ -237,7 +237,7 @@ fn play_random_song(app: &mut App) {
         {
           if let Some(num_tracks) = &playlist
             .tracks
-            .get("total")
+            .total
             .and_then(|total| -> Option<usize> { from_value(total.clone()).ok() })
           {
             let uri = Some(playlist.uri.clone());
@@ -285,7 +285,7 @@ fn jump_to_end(app: &mut App) {
           if let Some(selected_playlist) = playlists.items.get(selected_playlist_index.to_owned()) {
             let total_tracks = selected_playlist
               .tracks
-              .get("total")
+              .total
               .and_then(|total| total.as_u64())
               .expect("playlist.tracks object should have a total field")
               as u32;
