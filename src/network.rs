@@ -18,9 +18,9 @@ use rspotify::{
     show::SimplifiedShow,
     track::FullTrack,
     PlayingItem,
+    enums::{AdditionalType, Country, RepeatState, SearchType},
   },
   oauth2::{SpotifyClientCredentials, SpotifyOAuth, TokenInfo},
-  senum::{AdditionalType, Country, RepeatState, SearchType},
   util::get_token,
 };
 use serde_json::{map::Map, Value};

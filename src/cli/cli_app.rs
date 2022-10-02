@@ -5,7 +5,9 @@ use super::util::{Flag, Format, FormatType, JumpDirection, Type};
 
 use anyhow::{anyhow, Result};
 use rand::{thread_rng, Rng};
+use rspotify::model::Country;
 use rspotify::model::{context::CurrentPlaybackContext, PlayableItem};
+use rspotify::prelude::Id;
 
 pub struct CliApp<'a> {
   pub net: Network<'a>,
@@ -358,17 +360,17 @@ impl<'a> CliApp<'a> {
 
         // Want to like but is already liked -> do nothing
         // Want to like and is not liked yet -> like
-        if s && !self.is_a_saved_track(&id).await {
+        if s && !self.is_a_saved_track(id.id()).await {
           self
             .net
-            .handle_network_event(IoEvent::ToggleSaveTrack(id))
+            .handle_network_event(IoEvent::ToggleSaveTrack(id.id().to_string()))
             .await;
         // Want to dislike but is already disliked -> do nothing
         // Want to dislike and is liked currently -> remove like
-        } else if !s && self.is_a_saved_track(&id).await {
+        } else if !s && self.is_a_saved_track(id.id()).await {
           self
             .net
-            .handle_network_event(IoEvent::ToggleSaveTrack(id))
+            .handle_network_event(IoEvent::ToggleSaveTrack(id.id().to_string()))
             .await;
         }
       }
@@ -422,7 +424,7 @@ impl<'a> CliApp<'a> {
         hs.push(Format::Flags((
           context.repeat_state,
           context.shuffle_state,
-          self.is_a_saved_track(&id).await,
+          self.is_a_saved_track(id.id()).await,
         )));
         hs
       }
@@ -512,7 +514,8 @@ impl<'a> CliApp<'a> {
       match item {
         Type::Track => {
           if let Some(r) = &results.tracks {
-            r.items[0].uri.clone()
+            //r.items[0].uri().clone()
+            r.items[0].id.unwrap().uri()
           } else {
             return Err(anyhow!("no tracks with name '{}'", name));
           }

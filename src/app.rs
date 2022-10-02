@@ -562,7 +562,7 @@ impl App {
       seed_artists,
       seed_tracks,
       Box::new(first_track),
-      user_country,
+      Some(user_country),
     ));
   }
 
@@ -1170,7 +1170,7 @@ impl App {
     self.dispatch(IoEvent::GetArtist(
       artist_id,
       input_artist_name,
-      Some(user_country),
+      user_country,
     ));
   }
 
